@@ -31,6 +31,7 @@ def generateAudio(text, local_path="./chatTTS", speaker="girl", output_name="gir
     speaker_emb = torch.tensor([float(x) for x in spk_vector.split(",")])
     texts = [text, ]
     params_infer_code = {
+        "prompt": "[speed_2]",
         "spk_emb": speaker_emb
     }
     params_refine_text = {
@@ -40,16 +41,17 @@ def generateAudio(text, local_path="./chatTTS", speaker="girl", output_name="gir
                       params_refine_text=params_refine_text,
                       params_infer_code=params_infer_code
                       )
-    torchaudio.save(f"{output_path}/{output_name}_break2.wav", torch.from_numpy(wavs[0]), 24000)
+    torchaudio.save(f"{output_path}/{output_name}_speed2.wav", torch.from_numpy(wavs[0]), 24000)
 
-    params_refine_text = {
-        "prompt": "[oral_0][laugh_0][break_6]"
+    params_infer_code = {
+        "prompt": "[speed_6]",
+        "spk_emb": speaker_emb
     }
     wavs = chat.infer(texts,
                       params_refine_text=params_refine_text,
                       params_infer_code=params_infer_code
                       )
-    torchaudio.save(f"{output_path}/{output_name}_break6.wav", torch.from_numpy(wavs[0]), 24000)
+    torchaudio.save(f"{output_path}/{output_name}_speed6.wav", torch.from_numpy(wavs[0]), 24000)
 
 
 if __name__ == "__main__":
