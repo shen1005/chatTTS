@@ -4,7 +4,16 @@ from IPython.display import Audio
 import torch
 import torchaudio
 import json
-def generateAudio(text, local_path="./chatTTS", output_name="output.wav"):
+
+# Function to get text from a file
+def getTextCase(fileName):
+    with open(fileName, 'r') as file:
+        data = file.read().replace('\n', "")
+    return data
+
+
+# Function to generate audio from text
+def generateAudio(text, local_path="./chatTTS", speaker="girl", output_name="girl_chinese1"):
     chat = ChatTTS.Chat()
     print("Loading models...")
     config_path = os.path.join(local_path, 'config', 'path.yaml')
@@ -13,16 +22,43 @@ def generateAudio(text, local_path="./chatTTS", output_name="output.wav"):
     chat.load_models(source="local", local_path=local_path)
     print("Models loaded!")
 
+    output_path = "./output"
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+
     spk_vector = json.load(open("speaker.json", "r"))
-    girl_vector = spk_vector["girl"]
+    sok_vector = spk_vector[speaker]
     speaker_emb = torch.tensor([float(x) for x in spk_vector.split(",")])
     texts = [text, ]
     params_infer_code = {
-        "use_decoder": True,
-        "speaker_emb": speaker_emb
+        "spk_emb": speaker_emb
     }
-    wavs = chat.infer_waveform(texts, params_infer_code=params_infer_code)
+    params_refine_text = {
+        "prompt": "[oral_0][laugh_0][break_2]"
+    }
+    wavs = chat.infer(texts,
+                      params_refine_text=params_refine_text,
+                      params_infer_code=params_infer_code
+                      )
+    torchaudio.save(f"{output_path}/{output_name}_break2.wav", torch.from_numpy(wavs[0]), 24000)
 
-    torchaudio.save("output.wav", torch.from_numpy(wavs[0]), 24000)
+    params_refine_text = {
+        "prompt": "[oral_0][laugh_0][break_6]"
+    }
+    wavs = chat.infer(texts,
+                      params_refine_text=params_refine_text,
+                      params_infer_code=params_infer_code
+                      )
+    torchaudio.save(f"{output_path}/{output_name}_break6.wav", torch.from_numpy(wavs[0]), 24000)
 
-generateAudio("Hello, my name is ChatTTS. I am a text-to-speech model.")
+
+if __name__ == "__main__":
+    speakers = ["girl", "boy"]
+    # 找到testcase文件夹下的所有文件
+    testCases = os.listdir("testcase")
+    for testCase in testCases:
+        text = getTextCase(f"testcase/{testCase}")
+        for speaker in speakers:
+            testCase = testCase.split(".")[0]
+            generateAudio(text, speaker=speaker, output_name=f"{speaker}_{testCase}")
+            print(f"Audio for {speaker} generated for {testCase}")
